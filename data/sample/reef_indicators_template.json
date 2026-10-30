@@ -1,0 +1,9 @@
+{
+  "site_name": "Replace with your reef or survey name",
+  "survey_date": null,
+  "source": "Name the benthic classification or external CHI script",
+  "lcc_percent": null,
+  "ac_percent": null,
+  "chi_score": null,
+  "notes": "Enter LCC and AC percentages from a benthic classification. Enter chi_score only when calculated by your separately verified CHI implementation. Leave unavailable values as null."
+}

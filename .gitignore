@@ -1,0 +1,15 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.env
+.pytest_cache/
+outputs/
+build/
+dist/
+.ipynb_checkpoints/
+# Large raw data (keep only data/sample in git)
+data/raw/
+*.las
+*.laz

@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Coral reef health-class distribution from the previously implemented Coral Health Index output.">
+  <meta name="theme-color" content="#082f3a">
+  <title>Coral Reef Health Dashboard</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: #eff7f7;
+      --surface: #ffffff;
+      --surface-2: #f5fafa;
+      --ink: #102f38;
+      --muted: #5c747b;
+      --line: #d7e5e7;
+      --accent: #087f8c;
+      --poor: #d95b58;
+      --fair: #e5a43b;
+      --good: #2e9b70;
+      --excellent: #3883c5;
+      --shadow: 0 14px 36px rgba(16, 62, 70, .08);
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #071d25;
+        --surface: #102d37;
+        --surface-2: #0b2530;
+        --ink: #e9f4f5;
+        --muted: #a4bdc2;
+        --line: #294852;
+        --accent: #69d1d0;
+        --poor: #f07870;
+        --fair: #f0bd65;
+        --good: #61c99b;
+        --excellent: #75b7ed;
+        --shadow: 0 14px 36px rgba(0, 0, 0, .18);
+      }
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: radial-gradient(ellipse at top left, rgba(8,127,140,.12), transparent 42%), var(--bg);
+      color: var(--ink);
+      font: 15px/1.6 Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    .wrap { width: min(1080px, calc(100% - 36px)); margin: 0 auto; padding: 44px 0 54px; }
+    header { margin-bottom: 28px; }
+    .eyebrow { color: var(--accent); text-transform: uppercase; letter-spacing: .13em; font-size: .74rem; font-weight: 800; }
+    h1 { margin: 8px 0 8px; font-size: clamp(2rem, 4vw, 3.1rem); line-height: 1.12; letter-spacing: -.04em; }
+    .lead { max-width: 720px; margin: 0; color: var(--muted); font-size: 1.04rem; }
+    .source-tag { display: inline-flex; align-items: center; gap: 8px; margin-top: 18px; padding: 7px 11px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); color: var(--muted); font-size: .82rem; }
+    .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--good); display: inline-block; }
+    .section-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: end; gap: 8px 18px; margin: 30px 0 14px; }
+    h2 { margin: 0; font-size: 1.18rem; letter-spacing: -.01em; }
+    .section-meta { color: var(--muted); font-size: .85rem; }
+    .cards { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
+    .card { position: relative; overflow: hidden; background: var(--surface); border: 1px solid var(--line); border-radius: 17px; padding: 19px 18px 17px; box-shadow: var(--shadow); }
+    .card::before { content: ""; position: absolute; inset: 0 auto 0 0; width: 4px; background: var(--class-color); }
+    .card-label { display: flex; align-items: center; gap: 9px; color: var(--muted); font-weight: 700; }
+    .swatch { width: 10px; height: 10px; border-radius: 3px; background: var(--class-color); }
+    .value { margin-top: 11px; font-size: clamp(1.75rem, 3.5vw, 2.35rem); line-height: 1.1; font-weight: 800; letter-spacing: -.045em; font-variant-numeric: tabular-nums; }
+    .card-note { margin-top: 8px; color: var(--muted); font-size: .8rem; }
+    .panel { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 22px; box-shadow: var(--shadow); }
+    .stacked { display: flex; width: 100%; height: 26px; overflow: hidden; border-radius: 999px; background: var(--line); margin: 20px 0 22px; }
+    .segment { height: 100%; min-width: 0; }
+    .legend { display: flex; flex-wrap: wrap; gap: 10px 20px; color: var(--muted); font-size: .82rem; }
+    .legend span { display: inline-flex; align-items: center; gap: 7px; }
+    .legend i { width: 9px; height: 9px; border-radius: 3px; background: var(--c); }
+    .rows { display: grid; gap: 15px; }
+    .row-top { display: flex; justify-content: space-between; gap: 12px; margin-bottom: 6px; font-weight: 650; }
+    .row-top strong { font-variant-numeric: tabular-nums; }
+    .track { height: 11px; overflow: hidden; border-radius: 999px; background: var(--surface-2); border: 1px solid var(--line); }
+    .bar { height: 100%; width: var(--w); background: var(--c); border-radius: inherit; }
+    .insight { display: flex; gap: 14px; align-items: flex-start; margin-top: 16px; padding: 16px 18px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface-2); }
+    .insight-mark { display: grid; place-items: center; flex: 0 0 34px; height: 34px; border-radius: 10px; background: color-mix(in srgb, var(--poor) 16%, transparent); color: var(--poor); font-weight: 900; }
+    .insight p { margin: 0; }
+    .insight strong { display: block; margin-bottom: 2px; }
+    .note { margin-top: 20px; padding: 13px 15px; border: 1px solid var(--line); border-radius: 12px; color: var(--muted); font-size: .84rem; }
+    .raw { margin-top: 14px; padding: 14px 16px; border-radius: 12px; background: var(--surface-2); border: 1px solid var(--line); color: var(--muted); overflow-x: auto; font: .82rem/1.55 ui-monospace, SFMono-Regular, Consolas, monospace; }
+    footer { margin-top: 28px; padding-top: 16px; border-top: 1px solid var(--line); color: var(--muted); font-size: .78rem; }
+    @media (max-width: 760px) { .cards { grid-template-columns: repeat(2, minmax(0, 1fr)); } .wrap { padding-top: 30px; } }
+    @media (max-width: 420px) { .cards { gap: 9px; } .card { padding: 15px 13px; } .panel { padding: 16px; } }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <header>
+      <div class="eyebrow">CoralGuard · Reef monitoring</div>
+      <h1>Coral Reef Health Dashboard</h1>
+      <p class="lead">Health-class distribution from your previously implemented Coral Health Index output.</p>
+      <div class="source-tag"><span class="dot" aria-hidden="true"></span> Previous model output · Values preserved as supplied</div>
+    </header>
+
+    <section aria-labelledby="distribution-title">
+      <div class="section-head">
+        <h2 id="distribution-title">Health-class distribution</h2>
+        <div class="section-meta">Total classified share: <strong>100.00%</strong></div>
+      </div>
+      <div class="cards">
+        <article class="card" style="--class-color:var(--poor)">
+          <div class="card-label"><span class="swatch"></span>Poor</div>
+          <div class="value">86.24%</div>
+          <div class="card-note">Largest share of the classified area</div>
+        </article>
+        <article class="card" style="--class-color:var(--fair)">
+          <div class="card-label"><span class="swatch"></span>Fair</div>
+          <div class="value">2.84%</div>
+          <div class="card-note">Fair health classification</div>
+        </article>
+        <article class="card" style="--class-color:var(--good)">
+          <div class="card-label"><span class="swatch"></span>Good</div>
+          <div class="value">10.92%</div>
+          <div class="card-note">Good health classification</div>
+        </article>
+        <article class="card" style="--class-color:var(--excellent)">
+          <div class="card-label"><span class="swatch"></span>Excellent</div>
+          <div class="value">0.00%</div>
+          <div class="card-note">Excellent health classification</div>
+        </article>
+      </div>
+    </section>
+
+    <section aria-labelledby="visual-title">
+      <div class="section-head">
+        <h2 id="visual-title">Visual breakdown</h2>
+        <div class="section-meta">Share of all classified pixels</div>
+      </div>
+      <div class="panel">
+        <div class="legend" aria-label="Chart legend">
+          <span><i style="--c:var(--poor)"></i>Poor 86.24%</span>
+          <span><i style="--c:var(--fair)"></i>Fair 2.84%</span>
+          <span><i style="--c:var(--good)"></i>Good 10.92%</span>
+          <span><i style="--c:var(--excellent)"></i>Excellent 0.00%</span>
+        </div>
+        <div class="stacked" role="img" aria-label="Stacked bar: Poor 86.24 percent, Fair 2.84 percent, Good 10.92 percent, Excellent 0 percent">
+          <div class="segment" style="width:86.24%;background:var(--poor)"></div>
+          <div class="segment" style="width:2.84%;background:var(--fair)"></div>
+          <div class="segment" style="width:10.92%;background:var(--good)"></div>
+        </div>
+        <div class="rows">
+          <div>
+            <div class="row-top"><span>Poor</span><strong>86.24%</strong></div>
+            <div class="track"><div class="bar" style="--w:86.24%;--c:var(--poor)"></div></div>
+          </div>
+          <div>
+            <div class="row-top"><span>Fair</span><strong>2.84%</strong></div>
+            <div class="track"><div class="bar" style="--w:2.84%;--c:var(--fair)"></div></div>
+          </div>
+          <div>
+            <div class="row-top"><span>Good</span><strong>10.92%</strong></div>
+            <div class="track"><div class="bar" style="--w:10.92%;--c:var(--good)"></div></div>
+          </div>
+          <div>
+            <div class="row-top"><span>Excellent</span><strong>0.00%</strong></div>
+            <div class="track"><div class="bar" style="--w:0%;--c:var(--excellent)"></div></div>
+          </div>
+        </div>
+        <div class="insight">
+          <div class="insight-mark" aria-hidden="true">!</div>
+          <p><strong>Poor is the dominant class.</strong>It accounts for 86.24% of the health-class distribution in this previous output.</p>
+        </div>
+      </div>
+    </section>
+
+    <div class="note"><strong>Data note:</strong> These four percentages are taken from your earlier console output and are displayed unchanged. This static GitHub Pages dashboard does not rerun the LiDAR processing, recalculate CHI, or infer SC, VR, LCC, or AC values.</div>
+    <details>
+      <summary>Show original output</summary>
+      <pre class="raw">Poor: 86.24%
+Fair: 2.84%
+Good: 10.92%
+Excellent: 0.00%</pre>
+    </details>
+    <footer>CoralGuard · Coral Health Index · Static dashboard for the previously implemented classification output</footer>
+  </main>
+</body>
+</html>
